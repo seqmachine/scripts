@@ -1,0 +1,20 @@
+#Aug.1, 2016
+#
+#
+mapping multiple thread?
+
+varscan, snp, indel
+samtools
+freebayes
+GATK
+
+annotation
+
+copynumber
+
+
+#Aug .31, 2016
+BAF bcftools copy number
+Varscan2 copy nubmer
+single sample baseline
+
