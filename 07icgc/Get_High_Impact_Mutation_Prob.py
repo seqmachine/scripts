@@ -4,7 +4,7 @@
 
 #icgc mutation with high impact, likely deleterious, cancer gene census COSMIC database
 
-import sys, math
+import sys, math, operator
 
 def parseLine(line):
 
@@ -37,6 +37,25 @@ def getProbByProj(probSet, N):
         #only return dict if not empty
 	
 
+#{"colon":-2, "brca":-1} ###should double check!!!!
+def sumLogProbPerProj(geneList, metaTableDict):
+    #
+    sumDict={}
+    for gene in geneList:
+        if metaTableDict.has_key(gene):
+            probDict=metaTableDict[gene]
+            for cancer in probDict.keys():
+                if not sumDict.has_key(cancer):
+                    sumDict[cancer]=probDict[cancer]
+                else:
+                    sumDict[cancer]=sumDict[cancer]+probDict[cancer]
+    #sort dict by value, output sorted tuples
+    sumDict_sorted=sorted(sumDict.items(), key=operator.itemgetter(1))
+    sumDict_sorted.reverse()#get descending order
+    return sumDict_sorted
+
+
+
 def main(inputFile, N=100):
     Dict={}
     fh=open(inputFile, "r")
@@ -48,14 +67,25 @@ def main(inputFile, N=100):
                 if cancer2prob:
                     Dict[gene]=cancer2prob
         except:
-            print "Error, unusual data format!"
+            #print "#Error, unusual data format!"
             pass 
     
     fh.close()
     return Dict 
 
 
+
+
 if __name__=="__main__":
     Dict=main(sys.argv[1], float(sys.argv[2]))
-    print Dict    
-	
+    geneListfile=sys.argv[3]
+    fh=open(geneListfile, "r")
+    for line in fh:
+        glist=line.split("\n")
+    clist=sumLogProbPerProj(glist, Dict)
+    for tu in clist:
+        print tu[0]+"\t"+str(tu[1])
+
+
+
+
