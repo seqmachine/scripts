@@ -1,0 +1,64 @@
+###TianR
+###Dec 10, 2016
+
+USB wireless adapter: Confast, Modle:CF-912AC
+In windows shown as "Realtek 8812AU wireless"
+
+
+https://github.com/abperiasamy/rtl8812AU_8821AU_linux
+
+git clone https://github.com/abperiasamy/rtl8812AU_8821AU_linux.git
+cd rtl8812*
+make
+sudo make install
+
+
+tianr@RB01:~/rtl8812AU_8821AU_linux$ dkms status
+rtl8812au, #MODULE_VERSION#: added
+
+tianr@RB01:~/rtl8812AU_8821AU_linux$ dmesg | grep 8812
+[    0.088124]  #2 #3 #4 #5 #6 #7
+[    0.188128] ACPI: Power Resource [FN03] (off)
+[    2.104432] usb 1-10: New USB device found, idVendor=0bda, idProduct=8812
+[  234.516575] usb 1-10: New USB device found, idVendor=0bda, idProduct=8812
+[  909.375864] usb 1-10: New USB device found, idVendor=0bda, idProduct=8812
+
+
+iwconfig
+
+ifconfig
+ifconfig -a
+
+lshw -C network
+
+lspci
+
+
+##########################################################################
+#Chinese input
+
+My system had a similar problem: I was able to choose "Chinese", but it didn't really input any Chinese. The key step missing was to install a specific Chinese input method/package. E.g.:
+
+sudo apt-get install ibus-pinyin 
+
+After installing Pinyin in this example, go to System Settings → Language Support → Chinese (Pinyin).
+
+After either of those commands do not forget to restart the IBus daemon
+
+ibus restart
+
+check on dash text entry
+
+#########################################################################
+#skype Jan 10, 2017
+wget http://download.skype.com/linux/skype-ubuntu-precise_4.3.0.37-1_i386.deb
+sudo dpkg --add-architecture i386
+sudo apt-get update
+sudo dpkg -i skype-ubuntu-precise_4.3.0.37-1_i386.deb
+apt-get -f install
+#above force install dependencies
+
+
+
+
+
