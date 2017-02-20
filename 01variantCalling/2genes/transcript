@@ -1,0 +1,59 @@
+http://www.genenames.org/cgi-bin/gene_symbol_report?hgnc_id=HGNC:11998
+http://refgene.com/gene/4869/refseq
+http://refgene.com/gene/7157/refseq
+
+TP53,NM_000546,393aa,NP_000537
+NPM1,NM_002520,294aa,NP_002511
+
+
+
+less 336.snp.xls |awk -F "\t" '{split($9,M,","); for (i in M) print $1, $2, $3, M[i]}' | grep -E ":NM_000546:|NPM1:NM_002520" | less
+
+
+less snv.aggregated.tab | cut -f2-10 | sed "s/synonymous SNV/synonymous_SNV/g" |sed "s/\t/@/g" |sort | uniq -c | sort -k1nr | awk '{print $1"\t"$2}' | less
+
+paste <(cat snv.aggregated.tab | cut -f2-10 | sed "s/\t/@/g") <(cat snv.aggregated.tab |cut -f11) |sort -k1 | wc -l
+
+chr17@7578432@7578432@T@G@exonic@TP53@synonymous SNV@TP53:NM_000546:exon5:c.A498C:p.S166S       1.54%
+chr17@7578432@7578432@T@G@exonic@TP53@synonymous SNV@TP53:NM_000546:exon5:c.A498C:p.S166S       1.55%
+chr17@7578432@7578432@T@G@exonic@TP53@synonymous SNV@TP53:NM_000546:exon5:c.A498C:p.S166S       1.55%
+chr17@7578432@7578432@T@G@exonic@TP53@synonymous SNV@TP53:NM_000546:exon5:c.A498C:p.S166S       1.56%
+
+
+
+
+
+
+
+
+
+input=$1
+
+paste <(less $input | cut -f2-10 | sed "s/\t/@/g") <(less $input |cut -f1) | sort >$input".ids"
+paste <(less $input | cut -f2-10 | sed "s/\t/@/g") <(less $input |cut -f11) | sort |sed "s/%//g" >$input".freq"
+paste <(python summa.freq.sorted.py $input".freq" |sort -k1nr) <(python summa.ids.sorted.py $input".ids" | sort -k1nr |cut -f3) | sed "s/@/\t/g" >$input".TAB"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
