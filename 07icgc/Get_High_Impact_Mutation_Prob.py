@@ -84,8 +84,9 @@ if __name__=="__main__":
         glist=line.split("\n")
     clist=sumLogProbPerProj(glist, Dict)
     for tu in clist:
-        print tu[0]+"\t"+str(tu[1])
-
+	#math.pow()
+	prob=round(math.pow(10, tu[1]),4)
+        print tu[0]+"\t"+str(prob)
 
 
 
