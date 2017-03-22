@@ -60,5 +60,39 @@ apt-get -f install
 
 
 
+########################################################################
+How to update R in ubuntu
+
+sudo su
+echo "deb http://www.stats.bris.ac.uk/R/bin/linux/ubuntu precise/" >> /etc/apt/sources.list
+apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
+apt-get update
+apt-get upgrade
+
+install this, before compiling latest R
+libcurl4-openssl-dev
+
+xmllib:
+sudo apt-get install libxml2
+sudo apt-get install libxml2-dev
+
+#######################################################################
+R version matters, March 22, 2017
+# R-3.3.3 does not work with Ubuntu 16.04
+sudo apt-get install gfortran
+./configure --with-x=no -with-readline=no
+make
+sudo make install
+#/usr/local/bin
+
+source("http://bioconductor.org/biocLite.R")
+biocLite("DESeq2")
+
+
+
+
+
+
+
 
 
