@@ -1,0 +1,55 @@
+#CDF file
+#cel description file
+#download
+#http://brainarray.mbni.med.umich.edu/Brainarray/Database/CustomCDF/21.0.0/refseq.asp
+
+#what is the difference?
+#source("http://bioconductor.org/biocLite.R")
+#biocLite("hgu133plus2.db")
+
+#R studio
+#install.packages("~/Desktop/hgu133plus2hsrefseqcdf_21.0.0.tar.gz", repos = NULL, type = "source")
+#R CMD install
+#get library path
+#.libPaths()
+
+#
+library(affy)
+data<-ReadAffy(filenames=dir(pattern=".CEL.gz"))
+data@cdfName
+library("hgu133plus2hsrefseqcdf")
+data@cdfName<-"hgu133plus2hsrefseqcdf"
+data
+eset<-rma(data)
+
+#> pData(eset)
+#                 sample
+#GSM364547.CEL.gz      1
+#GSM364548.CEL.gz      2
+#GSM364549.CEL.gz      3
+#GSM364550.CEL.gz      4
+write.exprs(eset, file="blood.exprs.txt", sep="\t")
+
+library(limma)
+
+design<-model.matrix(~0+factor(c(1,1,2,2)))
+colnames(design)<-c("human_CD133", "human_CD36")
+data<-as.matrix(exprs(eset))
+fit<-lmFit(data, design)
+
+x<-c('human_CD133-human_CD36')
+contrast.matrix<-makeContrasts(contrasts=x,levels=design)
+fit2<-contrasts.fit(fit, contrast.matrix)
+
+fit2<-eBayes(fit2)
+topTable(fit2, number=10)
+
+#                       logFC  AveExpr
+#NM_000559.2_at    -10.026907 9.547714
+#NM_001145847.1_at   7.639561 8.034666
+#                          t      P.Value
+#NM_000559.2_at    -122.6144 6.568179e-12
+#NM_001145847.1_at  107.8895 1.473496e-11
+#                    adj.P.Val        B
+#NM_000559.2_at    6.344852e-08 17.08569
+#NM_001145847.1_at 6.344852e-08 16.64414
