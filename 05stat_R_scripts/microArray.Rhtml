@@ -1,0 +1,50 @@
+<html>
+
+<head>
+<title>How to Analyze Affymetric Microarray Data by Using R</title>
+</head>
+
+<body>
+
+<p>This is an example to show microarray data analysis by using R packages <b>affy</b> and <b>limma</b>.</p>
+
+<!--begin.rcode
+setwd("/Users/tianr/Desktop/blood_microarray")
+library(affy)
+data<-ReadAffy(filenames=dir(pattern=".CEL.gz"))
+data@cdfName
+library("hgu133plus2hsrefseqcdf")
+data@cdfName<-"hgu133plus2hsrefseqcdf"
+eset<-rma(data)
+library(limma)
+
+design<-model.matrix(~0+factor(c(1,1,2,2)))
+colnames(design)<-c("human_CD133", "human_CD36")
+exprs.mat<-as.matrix(exprs(eset))
+fit<-lmFit(exprs.mat, design)
+
+x<-c('human_CD133-human_CD36')
+contrast.matrix<-makeContrasts(contrasts=x,levels=design)
+fit2<-contrasts.fit(fit, contrast.matrix)
+
+fit2<-eBayes(fit2)
+diff.exprs<-topTable(fit2, n=3000,sort.by="p", adjust.method="BH", p.value=1, lfc=0)
+head(diff.exprs)
+
+top500<-topTable(fit2, n=500,sort.by="p", adjust.method="BH", p.value=1, lfc=0)
+gene.list<-row.names(as.matrix(top500))
+
+#diff.significant<-diff.exprs[diff.exprs$adj.P.Val<=0.05,]
+#dim(diff.significant)
+write.table(diff.exprs, file="diff.exprs.txt", sep="\t")
+end.rcode-->
+
+<p>Take a look at those differentially expressed genes:</p>
+
+<!--begin.rcode fig.width=7, fig.height=6
+library(pheatmap)
+pheatmap(exprs.mat[gene.list, ], show_rownames=F, color = colorRampPalette(c("navy", "white", "firebrick3"))(100))              
+end.rcode-->
+
+</body>
+</html>
