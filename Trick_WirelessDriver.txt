@@ -90,6 +90,38 @@ biocLite("DESeq2")
 
 
 
+#####################################################################################
+#ubuntu and R 3.3.3
+#There are too many dependencies ubuntu needs before R could be
+properly configured.
+#if R is installed, type rstudio
+
+sudo apt-get install libpcre3-dev
+sudo apt-get install  liblzma-dev
+sudo apt-get install  libbz2-dev
+sudo apt-get install libreadline6-dev
+sudo apt-get install libxt-dev
+
+
+./configure --prefix=/home/tianr/R --enable-R-shlib
+
+sudo make
+
+cp ~/R/bin/R /usr/local/bin/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
