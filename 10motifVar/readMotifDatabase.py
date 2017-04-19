@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
 
 #read motif database into dictionary
 
@@ -17,6 +18,8 @@
 
 import sys
 import gzip
+import math
+
 
 def readMotif(infile):
 	pWM=[]
@@ -35,6 +38,74 @@ def readMotif(infile):
 			else:
 				motifDict[idLine]=[motifDict[idLine], plist]
 	return motifDict	
+
+
+
+def scoreFasta(seq, pWeiMat):
+	'''
+	Given a fasta sequence, score per locus based on PWM
+	scoreFasta("atgct",[[0.9, 0.01, 0.02, 0.07], [0.07, 0.01, 0.02, 0.9]])
+	'''
+	lenSeq=len(seq)
+	lenMotif=len(pWeiMat) #list
+	
+	score=[]
+
+	if lenSeq >= lenMotif:
+		i=lenMotif
+		start=0
+		while (i<=lenSeq):
+			window=seq[start:i]
+			#print window
+			s=0
+			for j in range(len(window)):
+				base=window[j:(j+1)]
+				if base.upper()=="A":
+					s=s+math.log(pWeiMat[j][0])			
+				elif base.upper()=="C":
+					s=s+math.log(pWeiMat[j][1])
+				elif base.upper()=="G":
+					s=s+math.log(pWeiMat[j][2])
+				elif base.upper()=="T":	
+					s=s+math.log(pWeiMat[j][3])
+
+			score.append(s)
+			s=0
+			i=i+1
+			start=start+1
+
+		return score
+
+
+
+
+def scanPairs(refSeq, altSeq, motifDict):
+	'''
+	scan paired ref, alt seq for all motifs, ref, alt should have the same length and same genomic coordinates.
+	scanPairs("atgct", "aagct", {">motif1":[[0.9, 0.01, 0.02, 0.07], [0.07, 0.01, 0.02, 0.9]]})
+	'''	
+	diffList=[]
+	logRDict={}
+	
+	for id in motifDict:
+		refScore=scoreFasta(refSeq, motifDict[id])
+		altScore=scoreFasta(altSeq, motifDict[id])
+
+		if len(refScore) == len (altScore):
+			for index in range(len(refScore)): #what about indel???
+				diffList.append(round((refScore[index]-altScore[index]),2))# diff log ratio
+				
+		logRDict[id]=diffList
+		diffList=[]
+
+	return logRDict
+
+
+
+
+
+
+
 
 
 
