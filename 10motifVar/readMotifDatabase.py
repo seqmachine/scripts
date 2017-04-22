@@ -102,16 +102,45 @@ def scanPairs(refSeq, altSeq, motifDict):
 
 
 
+#>chr1_10440_C_A
+#cctaacccta accctaaccc taaccctaac ccctaaccctaaccctaaccctaaccctcg
+#>chr1_544787_G_C
+#CTCTGTGGCC AGCAGGCGGC GCTGCAGGAG AGGAGATGCCCAGGCCTGGCGGCCGGCGCA
+
+###which position???
+### test 3, instead of 30
+### critical!!!
+def compileFasta(seqID, seq, flankDistance):
+	'''
+	compileFasta(">chr1_544787_G_C", "CTCTGTGGCCAGCAGGCGGCGCTGCAGGAGAGGAGATGCCCAGGCCTGGCGGCCGGCGCA", 30)
+	'''
+	chrom, center, ref, alt=seqID.split("_")
+	if len(ref) < flankDistance:
+		if seq[(flankDistance-1):(flankDistance-1+len(ref))].upper() == ref.upper():
+			left=seq[:(flankDistance-1)]
+			right=seq[(flankDistance-1+len(ref)):]
+			altSeq=left+alt+right
+	else:
+		print "Error! Only small Indel is considered!"
+	return [seq, altSeq]	 
 
 
 
-
-
-
-
-
-
-
+def readFastaFile(infile, flankDistance, motifDict):
+	faDict={}
+	for line in open(infile, "r"):
+		line=line.strip("\n")
+		if line.startswith(">"):
+			seqID=line
+		else:	
+			seq=line
+		
+			pairedSeqList=compileFasta(seqID, seq, flankDistance)
+			
+			logRDict=scanPairs(pairedSeqList[0], pairedSeqList[1],motifDict)
+			
+			faDict[seqID]=logRDict
+	return faDict
 
 
 
