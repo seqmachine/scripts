@@ -33,10 +33,13 @@ def readMotif(infile):
 		elif line.startswith("0"):
 			a, c, g, t=line.split("\t")
 			plist=[float(a), float(c), float(g), float(t)]
-			if idLine not in motifDict:
-				motifDict[idLine]=plist
+			array=idLine.split("\t")
+			tfID=array[1].split("/")[0]
+			key=array[0]+"_"+tfID
+			if key not in motifDict:
+				motifDict[key]=plist
 			else:
-				motifDict[idLine]=[motifDict[idLine], plist]
+				motifDict[key]=[motifDict[key], plist]
 	return motifDict	
 
 
@@ -141,6 +144,62 @@ def readFastaFile(infile, flankDistance, motifDict):
 			
 			faDict[seqID]=logRDict
 	return faDict
+
+
+
+def removeZero(list):
+	outdict={}
+	i=0
+	for x in list:
+		if x==0:
+			pass
+		else:
+			outdict[i]=x
+		i=i+1
+	if not outdict:
+		outdict={"null":0}
+	return outdict	
+
+
+
+def reduceSortlogR(logRDict):
+	'''
+	{">seq1":{"motif1":[0,0,2,3,0,0]}}
+	{1:8,2:9}
+	'''
+	reducedMotifDict={}
+
+	for seqID in logRDict:
+		motifDict=logRDict[seqID]
+		for motif in motifDict:
+			outdict=removeZero(motifDict[motif])		
+			outdictSorted=sorted(outdict.items(), lambda x, y: cmp(abs(x[1]), abs(y[1])), reverse=True)
+			#abs highlight on diff
+			reducedMotifDict[motif]=outdictSorted[0]
+		motifDictSorted=sorted(reducedMotifDict.items(), lambda x, y: cmp(abs(x[1]), abs(y[1])), reverse=True)
+		logRDict[seqID]=motifDictSorted
+	return logRDict
+
+
+
+def main():
+	motifDB=sys.argv[1]#gz file
+	faFile=sys.argv[2] #fasta file
+	flankD=int(sys.argv[3])
+	
+	motifDict=readMotif(motifDB)
+	faDict=readFastaFile(faFile, flankD, motifDict)
+	resDict=reduceSortlogR(faDict)
+
+	for seqID in resDict:
+		print seqID
+		for motif in resDict[seqID]:
+			print motif
+			#"\t"+"\t".join([str(v) for v in resDict[seqID][motif]])
+
+
+if __name__=="__main__":
+	main()	
 
 
 
