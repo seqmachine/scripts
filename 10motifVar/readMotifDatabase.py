@@ -26,7 +26,9 @@ def readMotif(infile):
 	motifDict={}
 	idLine=""
 	i=0
-	for line in gzip.open(infile):
+	value=[]
+	countDict={}
+	for line in open(infile):
 		line=line.strip("\n")
 		if line.startswith(">"):
 			idLine=line
@@ -38,8 +40,20 @@ def readMotif(infile):
 			key=array[0]+"_"+tfID
 			if key not in motifDict:
 				motifDict[key]=plist
+				k=1
 			else:
-				motifDict[key]=[motifDict[key], plist]
+				if k==1:
+					value.append(motifDict[key])
+					value.append(plist)
+					k=k+1
+					motifDict[key]=value
+					value=[]
+				else:		
+					for v in motifDict[key]:
+						value.append(v)
+					value.append(plist)
+					motifDict[key]=value
+					value=[]
 	return motifDict	
 
 
@@ -117,6 +131,7 @@ def compileFasta(seqID, seq, flankDistance):
 	'''
 	compileFasta(">chr1_544787_G_C", "CTCTGTGGCCAGCAGGCGGCGCTGCAGGAGAGGAGATGCCCAGGCCTGGCGGCCGGCGCA", 30)
 	'''
+	altSeq=""
 	chrom, center, ref, alt=seqID.split("_")
 	if len(ref) < flankDistance:
 		if seq[(flankDistance-1):(flankDistance-1+len(ref))].upper() == ref.upper():
@@ -188,9 +203,11 @@ def main():
 	flankD=int(sys.argv[3])
 	
 	motifDict=readMotif(motifDB)
+#	print motifDict
 	faDict=readFastaFile(faFile, flankD, motifDict)
+#	print faDict
 	resDict=reduceSortlogR(faDict)
-
+#	print resDict
 	for seqID in resDict:
 		print seqID
 		for motif in resDict[seqID]:
