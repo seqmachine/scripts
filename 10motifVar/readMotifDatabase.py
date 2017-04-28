@@ -162,6 +162,18 @@ def readFastaFile(infile, flankDistance, motifDict):
 
 
 
+def getMaxabs(list):
+	max=0
+	min=0
+	for v in list:
+		if v > max:
+			max=v
+		if v < min:
+			min=v
+	return [max, min]
+
+
+
 def removeZero(list):
 	outdict={}
 	i=0
@@ -183,16 +195,20 @@ def reduceSortlogR(logRDict):
 	{1:8,2:9}
 	'''
 	reducedMotifDict={}
-
+	
+	
 	for seqID in logRDict:
 		motifDict=logRDict[seqID]
 		for motif in motifDict:
-			outdict=removeZero(motifDict[motif])		
-			outdictSorted=sorted(outdict.items(), lambda x, y: cmp(abs(x[1]), abs(y[1])), reverse=True)
+			outdict=getMaxabs(motifDict[motif])
+			reducedMotifDict[motif]=outdict		
+			#outdictSorted=sorted(outdict.items(), lambda x, y: cmp(abs(x[1]), abs(y[1])), reverse=True)
 			#abs highlight on diff
-			reducedMotifDict[motif]=outdictSorted[0]
-		motifDictSorted=sorted(reducedMotifDict.items(), lambda x, y: cmp(abs(x[1]), abs(y[1])), reverse=True)
-		logRDict[seqID]=motifDictSorted
+			#reducedMotifDict[motif]=outdictSorted[0]
+		#motifDictSorted=sorted(reducedMotifDict.items(), lambda x, y: cmp(abs(x[1]), abs(y[1])), reverse=True)
+		#logRDict[seqID]=motifDictSorted
+		logRDict[seqID]=reducedMotifDict
+		reducedMotifDict={}
 	return logRDict
 
 
@@ -203,16 +219,19 @@ def main():
 	flankD=int(sys.argv[3])
 	
 	motifDict=readMotif(motifDB)
-#	print motifDict
+	#print motifDict
 	faDict=readFastaFile(faFile, flankD, motifDict)
-#	print faDict
+	#print faDict
+	#seqID=">chr1_10180_T_C" 
+	#print seqID
+	#print faDict[seqID]
+
 	resDict=reduceSortlogR(faDict)
-#	print resDict
+	#print resDict
 	for seqID in resDict:
 		print seqID
 		for motif in resDict[seqID]:
-			print motif
-			#"\t"+"\t".join([str(v) for v in resDict[seqID][motif]])
+			print motif+"\t"+"\t".join([str(v) for v in resDict[seqID][motif]])
 
 
 if __name__=="__main__":
