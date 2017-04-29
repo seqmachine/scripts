@@ -19,7 +19,7 @@
 import sys
 import gzip
 import math
-
+import random as rm
 
 def readMotif(infile):
 	pWM=[]
@@ -37,7 +37,7 @@ def readMotif(infile):
 			plist=[float(a), float(c), float(g), float(t)]
 			array=idLine.split("\t")
 			tfID=array[1].split("/")[0]
-			key=array[0]+"_"+tfID
+			key=array[0].split(">")[1]+"_"+tfID
 			if key not in motifDict:
 				motifDict[key]=plist
 				k=1
@@ -119,6 +119,41 @@ def scanPairs(refSeq, altSeq, motifDict):
 
 
 
+def getMaxabs(list):
+	max=0
+	min=0
+	for v in list:
+		if v > max:
+			max=v
+		if v < min:
+			min=v
+	return [max, min]
+
+
+
+def permutateScanPairs(refSeq, altSeq, pWeiMat, N=10000): #use random, test!!!!
+	'''
+	permute N=1000 times of position weighted matrix of motif to compute distribution and p value of logRatio
+	[[0.9, 0.01, 0.02, 0.07], [0.07, 0.01, 0.02, 0.9]]
+	permutateScanPairs("atgct", "aagct", [[0.9, 0.01, 0.02, 0.07], [0.07, 0.01, 0.02, 0.9]], N=10)
+	'''
+	diffList=[]
+	totalList=[]
+	for i in range(N):
+		nrow=rm.randint(0,(len(pWeiMat)-1))
+		v=pWeiMat[nrow]
+		rm.shuffle(v)
+		pWeiMat[nrow]=v	
+		refScore=scoreFasta(refSeq, pWeiMat)
+		altScore=scoreFasta(altSeq, pWeiMat)
+		if len(refScore) == len (altScore):
+			for index in range(len(refScore)): #what about indel???
+				diffList.append(round((refScore[index]-altScore[index]),2))# diff log ratio
+		totalList.append(getMaxabs(diffList))
+		diffList=[]
+	return totalList
+
+
 #>chr1_10440_C_A
 #cctaacccta accctaaccc taaccctaac ccctaaccctaaccctaaccctaaccctcg
 #>chr1_544787_G_C
@@ -160,17 +195,6 @@ def readFastaFile(infile, flankDistance, motifDict):
 			faDict[seqID]=logRDict
 	return faDict
 
-
-
-def getMaxabs(list):
-	max=0
-	min=0
-	for v in list:
-		if v > max:
-			max=v
-		if v < min:
-			min=v
-	return [max, min]
 
 
 
