@@ -119,6 +119,62 @@ def scanPairs(refSeq, altSeq, motifDict):
 
 
 
+def scanPairsII(refSeq, altSeq, pWeiMat):
+	'''
+	scan paired ref, alt seq for all motifs, ref, alt should have the same length and same genomic coordinates.
+	scanPairsII("atgct", "aagct", [[0.9, 0.01, 0.02, 0.07], [0.07, 0.01, 0.02, 0.9]])
+	'''	
+	diffList=[]
+	
+	refScore=scoreFasta(refSeq, pWeiMat)
+	altScore=scoreFasta(altSeq, pWeiMat)
+
+	if len(refScore) == len (altScore):
+		for index in range(len(refScore)): #what about indel???
+			diffList.append(round((refScore[index]-altScore[index]),3))# diff log ratio
+	return diffList
+
+
+
+def getPValue(x, tlist, N=10000): #bug!!!
+	'''
+	get p value by permutation, nonparametric.
+	getPValue(-10, [-3,2,3,3,3,-3,-3,5,9,-9,-9])
+	'''
+	countDict={}
+	n=len(tlist)
+	summ=0
+	he=0
+	for t in tlist:
+		if not countDict.has_key(t):
+			countDict[t]=1
+		else:
+			countDict[t]=countDict[t]+1
+	#outdictSorted=sorted(outdict.items(), lambda x, y: cmp(abs(x[1]), abs(y[1])), reverse=True)
+	tSorted=sorted(countDict.keys()) #not redundant
+	#default ascending order, 1,2,3
+	if x > tSorted[-1]:
+		#max
+		return 1/N #N=10,000, 0.0001
+	elif x < tSorted[0]:
+		#min
+		return 1/N
+	else:
+		for t in tSorted:
+			#print str(t)+"----------------"
+			if x < 0 and x >= t:
+				#print str(t)+"\t"+str(countDict[t])
+				summ=summ+countDict[t]
+			if x > 0 and x <=t:
+				he=he+countDict[t]
+				#print str(t)+"\t"+str(countDict[t])
+		if x <0 :
+			return round(float(summ)/n,4)
+		elif x >0:
+			return round(float(he)/n, 4)
+								 	
+
+
 def getMaxabs(list):
 	max=0
 	min=0
@@ -139,20 +195,25 @@ def permutateScanPairs(refSeq, altSeq, pWeiMat, N=10000): #use random, test!!!!
 	'''
 	diffList=[]
 	totalList=[]
-	for i in range(N):
+	v=[]
+	logR=0.0
+	#fh=open(permDistri, "w")
+	oriList=scanPairsII(refSeq, altSeq, pWeiMat)
+	reducedOri=getMaxabs(oriList)
+	for i in xrange(N):
 		nrow=rm.randint(0,(len(pWeiMat)-1))
 		v=pWeiMat[nrow]
 		rm.shuffle(v)
 		pWeiMat[nrow]=v	
-		refScore=scoreFasta(refSeq, pWeiMat)
-		altScore=scoreFasta(altSeq, pWeiMat)
-		if len(refScore) == len (altScore):
-			for index in range(len(refScore)): #what about indel???
-				diffList.append(round((refScore[index]-altScore[index]),2))# diff log ratio
-		totalList.append(getMaxabs(diffList))
-		diffList=[]
-	return totalList
-
+		#		diffList.append(logR)# diff log ratio
+		#		fh.write(str(logR)+"\n")
+		diffList=scanPairsII(refSeq, altSeq, pWeiMat)
+		totalList.append(getMaxabs(diffList)[0]) 
+		totalList.append(getMaxabs(diffList)[1])
+	#fh.close()
+	alpha=getPValue(reducedOri[0], totalList, N=10000)
+	beta=getPValue(reducedOri[1], totalList, N=10000)
+	return {reducedOri[0]:alpha, reducedOri[1]:beta}
 
 #>chr1_10440_C_A
 #cctaacccta accctaaccc taaccctaac ccctaaccctaaccctaaccctaaccctcg
