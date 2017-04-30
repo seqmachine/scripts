@@ -211,9 +211,10 @@ def permutateScanPairs(refSeq, altSeq, pWeiMat, N=10000): #use random, test!!!!
 		totalList.append(getMaxabs(diffList)[0]) 
 		totalList.append(getMaxabs(diffList)[1])
 	#fh.close()
-	alpha=getPValue(reducedOri[0], totalList, N=10000)
-	beta=getPValue(reducedOri[1], totalList, N=10000)
-	return {reducedOri[0]:alpha, reducedOri[1]:beta}
+	alpha=getPValue(reducedOri[0], totalList, N)
+	beta=getPValue(reducedOri[1], totalList, N)
+	if alpha <0.1 or beta <0.1:
+		return {reducedOri[0]:alpha, reducedOri[1]:beta}
 
 #>chr1_10440_C_A
 #cctaacccta accctaaccc taaccctaac ccctaaccctaaccctaaccctaaccctcg
@@ -240,8 +241,13 @@ def compileFasta(seqID, seq, flankDistance):
 
 
 
-def readFastaFile(infile, flankDistance, motifDict):
+def readFastaFile(infile, flankDistance, motifDict, N=10000):
+	'''
+	return {'>chr1_10333_C_T': {'ATGACTCATC_AP-1(bZIP)': {6.879: 0.2555, -6.179: 0.2675}, 'SCCTSAGGSCAW_AP-2gamma(AP2)': {-6.905: 0.2295, 6.841: 0.296}}
+	'''
 	faDict={}
+	eachDict={}
+	logRDict={}	
 	for line in open(infile, "r"):
 		line=line.strip("\n")
 		if line.startswith(">"):
@@ -251,9 +257,12 @@ def readFastaFile(infile, flankDistance, motifDict):
 		
 			pairedSeqList=compileFasta(seqID, seq, flankDistance)
 			
-			logRDict=scanPairs(pairedSeqList[0], pairedSeqList[1],motifDict)
-			
+			#logRDict=scanPairs(pairedSeqList[0], pairedSeqList[1],motifDict)
+			for motif in motifDict:
+				eachDict=permutateScanPairs(pairedSeqList[0], pairedSeqList[1], motifDict[motif], N)
+				logRDict[motif]=eachDict
 			faDict[seqID]=logRDict
+			logRDict={}
 	return faDict
 
 
@@ -302,22 +311,28 @@ def main():
 	motifDB=sys.argv[1]#gz file
 	faFile=sys.argv[2] #fasta file
 	flankD=int(sys.argv[3])
+	sampleN=int(sys.argv[4])
 	
 	motifDict=readMotif(motifDB)
 	#print motifDict
-	faDict=readFastaFile(faFile, flankD, motifDict)
+	faDict=readFastaFile(faFile, flankD, motifDict, sampleN)
 	#print faDict
 	#seqID=">chr1_10180_T_C" 
 	#print seqID
 	#print faDict[seqID]
 
-	resDict=reduceSortlogR(faDict)
-	#print resDict
-	for seqID in resDict:
+	for seqID in faDict:
 		print seqID
-		for motif in resDict[seqID]:
-			print motif+"\t"+"\t".join([str(v) for v in resDict[seqID][motif]])
+		for motif in faDict[seqID]:
+			resDict=faDict[seqID][motif]
+			try:
+				vlist=resDict.keys()
+				print motif +"\t"+str(vlist[0])+"\t"+str(resDict[vlist[0]])+"\t"+str(vlist[1])+"\t"+str(resDict[vlist[1]])
+			except:
+				#print "ERROR!"
+				pass
 
+#python readMotifDatabase.py test.motifs test.fa 30 10000
 
 if __name__=="__main__":
 	main()	
