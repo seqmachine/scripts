@@ -19,7 +19,7 @@
 import sys
 import gzip
 import math
-
+import random as rm
 
 def readMotif(infile):
 	pWM=[]
@@ -37,7 +37,7 @@ def readMotif(infile):
 			plist=[float(a), float(c), float(g), float(t)]
 			array=idLine.split("\t")
 			tfID=array[1].split("/")[0]
-			key=array[0]+"_"+tfID
+			key=array[0].split(">")[1]+"_"+tfID
 			if key not in motifDict:
 				motifDict[key]=plist
 				k=1
@@ -96,26 +96,143 @@ def scoreFasta(seq, pWeiMat):
 
 
 
-def scanPairs(refSeq, altSeq, motifDict):
+def scanPairsII(refSeq, altSeq, pWeiMat):
 	'''
 	scan paired ref, alt seq for all motifs, ref, alt should have the same length and same genomic coordinates.
-	scanPairs("atgct", "aagct", {">motif1":[[0.9, 0.01, 0.02, 0.07], [0.07, 0.01, 0.02, 0.9]]})
+	scanPairsII("atgct", "aagct", [[0.9, 0.01, 0.02, 0.07], [0.07, 0.01, 0.02, 0.9]])
 	'''	
 	diffList=[]
-	logRDict={}
+	altList=[]
 	
-	for id in motifDict:
-		refScore=scoreFasta(refSeq, motifDict[id])
-		altScore=scoreFasta(altSeq, motifDict[id])
+	refScore=scoreFasta(refSeq, pWeiMat)
+	altScore=scoreFasta(altSeq, pWeiMat)
 
-		if len(refScore) == len (altScore):
-			for index in range(len(refScore)): #what about indel???
-				diffList.append(round((refScore[index]-altScore[index]),2))# diff log ratio
-				
-		logRDict[id]=diffList
-		diffList=[]
+	if len(refScore) == len (altScore):
+		for index in range(len(refScore)): #what about indel???
+			altList.append(round(altScore[index],3))
+			diffList.append(round((refScore[index]-altScore[index]),3))# diff log ratio
+	return [altList,diffList]
 
-	return logRDict
+
+
+def getPValue(x, tlist, N=10000): #bug!!! #estimated p value
+	'''
+	get p value by permutation, nonparametric.
+	getPValue(-10, [-3,2,3,3,3,-3,-3,5,9,-9,-9])
+	'''
+	countDict={}
+	n=len(tlist)
+	summ=0
+	he=0
+	for t in tlist:
+		if not countDict.has_key(t):
+			countDict[t]=1
+		else:
+			countDict[t]=countDict[t]+1
+	#outdictSorted=sorted(outdict.items(), lambda x, y: cmp(abs(x[1]), abs(y[1])), reverse=True)
+	tSorted=sorted(countDict.keys()) #not redundant
+	#default ascending order, 1,2,3
+	if x > tSorted[-1]:
+		#max
+		return 1/N #N=10,000, 0.0001
+	elif x < tSorted[0]:
+		#min
+		return 1/N
+	else:
+		for t in tSorted:
+			#print str(t)+"----------------"
+			if x < 0 and x >= t:
+				#print str(t)+"\t"+str(countDict[t])
+				summ=summ+countDict[t]
+			if x > 0 and x <=t:
+				he=he+countDict[t]
+				#print str(t)+"\t"+str(countDict[t])
+		if x <0 :
+			return round(float(summ)/n,4)
+		elif x >0:
+			return round(float(he)/n, 4)
+								 	
+
+
+def getMaxabs(list):
+	max=0
+	min=0
+	for v in list:
+		if v > max:
+			max=v
+		if v < min:
+			min=v
+	return [max, min]
+
+
+
+def permutateScanPairs(refSeq, altSeq, pWeiMat, cutoff=0.5, N=10000): #use random, test!!!!
+	'''
+	permute N=1000 times of position weighted matrix of motif to compute distribution and p value of logRatio
+	[[0.9, 0.01, 0.02, 0.07], [0.07, 0.01, 0.02, 0.9]]
+	permutateScanPairs("atgct", "aagct", [[0.9, 0.01, 0.02, 0.07], [0.07, 0.01, 0.02, 0.9]], N=10)
+	'''
+	diffList=[]
+	totalList=[]
+	v=[]
+	logR=0.0
+	#fh=open(permDistri, "w")
+	oriList=scanPairsII(refSeq, altSeq, pWeiMat)
+	reducedOri=getMaxabs(oriList)
+	for i in xrange(N):
+		nrow=rm.randint(0,(len(pWeiMat)-1))
+		v=pWeiMat[nrow]
+		rm.shuffle(v)
+		pWeiMat[nrow]=v	
+		#		diffList.append(logR)# diff log ratio
+		#		fh.write(str(logR)+"\n")
+		diffList=scanPairsII(refSeq, altSeq, pWeiMat)
+		totalList.append(getMaxabs(diffList)[0]) 
+		totalList.append(getMaxabs(diffList)[1])
+	#fh.close()
+	alpha=getPValue(reducedOri[0], totalList, N)
+	beta=getPValue(reducedOri[1], totalList, N)
+	if alpha < cutoff or beta < cutoff:
+		return {reducedOri[0]:alpha, reducedOri[1]:beta}
+
+
+
+def mutatePWMStat(pWeiMat, N=10000): #get permutation based p value of logRatio, diff
+	'''
+	[[0.9, 0.01, 0.02, 0.07], [0.07, 0.01, 0.02, 0.9]]
+	mutatePWM([[0.9, 0.01, 0.02, 0.07], [0.07, 0.01, 0.02, 0.9]],10)
+
+	'''
+	#score perfect hit
+	score=0.0
+	for i in xrange(len(pWeiMat)):
+		score=score+math.log(getMaxabs(pWeiMat[i])[0])
+	#print score	
+	mutScore=0.0
+	
+	diff=0.0
+	allProb=[round(score,3)]
+	diffList=[]
+	for j in xrange(N):
+		#nrow=rm.randint(0,(len(pWeiMat)-1))
+		#v=pWeiMat[nrow]
+		#rm.shuffle(v)
+		#pWeiMat[nrow]=v	
+		for i in xrange(len(pWeiMat)):
+			pos=rm.randint(0,3)# a, c, g, t, random take one position
+			mutScore=mutScore+math.log(pWeiMat[i][pos])#
+		#print mutScore
+		allProb.append(round(mutScore,3))# store all possible prob
+		mutScore=0.0	
+	
+	for k in range((len(allProb)-1)):
+		diff=allProb[k]-allProb[k+1]
+		diffList.append(round(diff,3))	
+
+	return [allProb,diffList]
+		
+
+
 
 
 
@@ -144,8 +261,14 @@ def compileFasta(seqID, seq, flankDistance):
 
 
 
-def readFastaFile(infile, flankDistance, motifDict):
+
+def readFastaFile(infile, flankDistance):
+	'''
+	return {seqID:[ref, alt]}
+	'''
 	faDict={}
+	pairedSeqList=[]
+
 	for line in open(infile, "r"):
 		line=line.strip("\n")
 		if line.startswith(">"):
@@ -154,23 +277,28 @@ def readFastaFile(infile, flankDistance, motifDict):
 			seq=line
 		
 			pairedSeqList=compileFasta(seqID, seq, flankDistance)
-			
-			logRDict=scanPairs(pairedSeqList[0], pairedSeqList[1],motifDict)
-			
-			faDict[seqID]=logRDict
+		faDict[seqID]=pairedSeqList
 	return faDict
 
+		
 
 
-def getMaxabs(list):
-	max=0
-	min=0
-	for v in list:
-		if v > max:
-			max=v
-		if v < min:
-			min=v
-	return [max, min]
+def stepWiseScanMotif(seqID, pairedSeqList, motifDict, cutoff=0.5, N=100):
+	'''
+	input stepWiseScanMotif(seqID='>chr1_10333_C_T', pairedSeqList=['aaccccaaccccaaccccaaccctaacccctaaccctaaccctaaccctaccctaaccct', 'aaccccaaccccaaccccaaccctaacccTtaaccctaaccctaaccctaccctaaccct'], motifDict=readMotif("test.motifs"), cutoff=0.5, N=100)
+	return {'>chr1_10333_C_T': {'ATGACTCATC_AP-1(bZIP)': {6.879: 0.2555, -6.179: 0.2675}, 'SCCTSAGGSCAW_AP-2gamma(AP2)': {-6.905: 0.2295, 6.841: 0.296}}
+	'''
+	eachDict=[]
+	newMotifDict={}
+	logRDict={}
+
+	for motif in motifDict:
+		eachDict=permutateScanPairs(pairedSeqList[0], pairedSeqList[1], motifDict[motif], cutoff, N)
+		if eachDict: #if this returns value
+			newMotifDict[motif]=motifDict[motif]						
+			logRDict[motif]=eachDict
+	return [seqID, pairedSeqList, newMotifDict, logRDict]
+
 
 
 
@@ -217,22 +345,54 @@ def main():
 	motifDB=sys.argv[1]#gz file
 	faFile=sys.argv[2] #fasta file
 	flankD=int(sys.argv[3])
+	cut=float(sys.argv[4])
+	sampleN=int(sys.argv[5])
+	#default N=10000
 	
 	motifDict=readMotif(motifDB)
 	#print motifDict
-	faDict=readFastaFile(faFile, flankD, motifDict)
-	#print faDict
-	#seqID=">chr1_10180_T_C" 
-	#print seqID
-	#print faDict[seqID]
-
-	resDict=reduceSortlogR(faDict)
-	#print resDict
-	for seqID in resDict:
+	#compute database:
+	dbDict={}
+	stat=[]
+	for motif in motifDict:
+		stat=mutatePWMStat(pWeiMat=motifDict[motif], N)
+		dbDict[motif]=stat	
+	#print len(dbDict)
+	#print "#-------------------------------------------------------------------------------------------------"
+	#print dbDict['CTTGGCACNGTGCCAA_NF1(CTF)'] # 3 min	
+	
+	#get fasta file dict, seqID:fasta
+	faDict=readFastaFile(infile=faFile, flankDistance=flankD)
+	
+	for seqID in faDict:
+	#seqID=">chr1_10180_T_C"
+	#if seqID==">chr1_10180_T_C":
 		print seqID
-		for motif in resDict[seqID]:
-			print motif+"\t"+"\t".join([str(v) for v in resDict[seqID][motif]])
+		pairs=faDict[seqID]
+		#print pairs
+		for motif in motifDict:
+			try:
+				scoreList=scanPairsII(refSeq=pairs[0], altSeq=pairs[1], pWeiMat=motifDict[motif])
+				#print scoreList
+				if scoreList !=[[], []]:
+					#hitScore=getMaxabs(scoreList[0])[0] #max
+					#print hitScore
+					hitScore= max(scoreList[0])
+					diffPerf=getMaxabs(scoreList[1])		
+					refstat=dbDict[motif]
+					a=getPValue(hitScore, refstat[0])
+					b=getPValue(diffPerf[0], refstat[1])
+					c=getPValue(diffPerf[1], refstat[1])
+					if a < cut:
+						if b < cut or c < cut:
+							try:
+								print motif+"\t"+str(hitScore)+"\t"+str(a)+"\t"+str(diffPerf[0])+"\t"+str(b)+"\t"+str(diffPerf[1])+"\t"+str(c)
+							except:
+								pass
+			except:
+				pass
 
+#python readMotifDatabase.py test.motifs test.fa 30 0.1 10000
 
 if __name__=="__main__":
 	main()	
