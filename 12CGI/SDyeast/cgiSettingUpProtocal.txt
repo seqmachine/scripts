@@ -1,4 +1,32 @@
 #Ubuntu 16.04 pythonCGI localhost from scratch
+#------------------------------------------------
+#Apache2, localhost
+#php7,how to test?
+#/var/www/
+#/etc/apache2/apache2.conf setting up ScriptAlias /cgi-bin/ /var/www/cgi-bin/
+#enable CGI
+#------------------------------------------------
+
+#setting up /etc/apache2/apache2.conf
+#this is very important, should avoid typo and syntax error
+
+#enable CGI  and restart apache2
+#sudo a2enmod cgi
+#sudo service apache2 restart
+
+ScriptAlias /cgi-bin/ /var/www/cgi-bin/
+
+#blow is optional
+#------------------------------------
+<Directory "/var/www/cgi-bin/">
+    AllowOverride None
+    Options +ExecCGI
+    AddHandler cgi-script .py .cgi .pl .php
+    Order allow,deny
+    Allow from all
+</Directory>
+
+
 
 
 sudo apt-get install openssh-client  
