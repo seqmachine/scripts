@@ -346,7 +346,7 @@ def main():
 	faFile=sys.argv[2] #fasta file
 	flankD=int(sys.argv[3])
 	cut=float(sys.argv[4])
-	sampleN=int(sys.argv[5])
+	N=int(sys.argv[5])
 	#default N=10000
 	
 	motifDict=readMotif(motifDB)
@@ -355,7 +355,7 @@ def main():
 	dbDict={}
 	stat=[]
 	for motif in motifDict:
-		stat=mutatePWMStat(pWeiMat=motifDict[motif], N)
+		stat=mutatePWMStat(pWeiMat=motifDict[motif], N=N)
 		dbDict[motif]=stat	
 	#print len(dbDict)
 	#print "#-------------------------------------------------------------------------------------------------"
@@ -383,12 +383,12 @@ def main():
 					a=getPValue(hitScore, refstat[0])
 					b=getPValue(diffPerf[0], refstat[1])
 					c=getPValue(diffPerf[1], refstat[1])
-					if a < cut:
-						if b < cut or c < cut:
-							try:
-								print motif+"\t"+str(hitScore)+"\t"+str(a)+"\t"+str(diffPerf[0])+"\t"+str(b)+"\t"+str(diffPerf[1])+"\t"+str(c)
-							except:
-								pass
+					#if a < cut:
+					if b < cut or c < cut:
+						try:
+							print motif+"\t"+str(hitScore)+"\t"+str(a)+"\t"+str(diffPerf[0])+"\t"+str(b)+"\t"+str(diffPerf[1])+"\t"+str(c)
+						except:
+							pass
 			except:
 				pass
 
