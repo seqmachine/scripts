@@ -53,13 +53,32 @@ pdf(nameout)
 
 print (paste("Saved output in",nameout))
 
+
+#April 9, 2019
+#use pheatmap
+if (!require("pheatmap")) {
+    install.packages("pheatmap", dependencies = TRUE)
+    library(pheatmap)
+    }
+
+if (!require("RColorBrewer")) {
+    source("http://bioconductor.org/biocLite.R")
+    biocLite(c("RColorBrewer"))
+    library(RColorBrewer)
+    }
+
+# create color palet
+#col.pal <- brewer.pal(9,"Blues")
+#col.pal<-colorRampPalette(c("green","white", "red"))(n = 1000)
+col.pal = colorRampPalette(c("navy", "white", "firebrick3"))(50)
+#pheatmap(mat.acb, color=col.pal, cluster_row = FALSE)
+
+
 library(gplots)
-
-
 #c("white", "black")
 
 #scale="col"
-heatmap.2(mat.acb, col=colorRampPalette(c("blue","white", "red"))(n = 1000), cexRow=0.9, scale="col", dendrogram="col", trace="none")
+heatmap.2(mat.acb, col=col.pal, cexRow=0.9, scale="col", dendrogram="col", trace="none")
 
 dev.off()
 
