@@ -21,7 +21,8 @@ if ptype=="ht01":
 	lociList=["ht011801260","ht011018381","ht012143340","ht016265","ht011800497","ht011799913","ht011800012"]
 elif ptype=="sk02":
 	#loci for SK02
-	lociList=["sk021800896","sk021050450","sk02322458","sk02763035","sk02582757","sk024880","sk022153271","sk0217553719","sk02747650","sk021800566"]
+	#increase sk02582757 July 9, 2019###cancer should be C>T
+	lociList=["sk021800896","sk021050450","sk02322458","sk02763035","sk024880","sk022153271","sk0217553719","sk02747650","sk021800566"]
 else:
 	raise ValueError("product type is not assigned, error!")
 
