@@ -22,7 +22,9 @@ if ptype=="ht01":
 elif ptype=="sk02":
 	#loci for SK02
 	#increase sk02582757 July 9, 2019###cancer should be C>T
-	lociList=["sk021800896","sk021050450","sk02322458","sk02763035","sk024880","sk022153271","sk0217553719","sk02747650","sk021800566"]
+	#Aug 26, 2019 upgrade 1133, 3330
+
+	lociList=["sk021801133","sk0274653330","sk021800896","sk021050450","sk02322458","sk02763035","sk024880","sk022153271","sk0217553719","sk02747650","sk021800566"]
 else:
 	raise ValueError("product type is not assigned, error!")
 

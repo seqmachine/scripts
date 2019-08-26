@@ -19,7 +19,10 @@ then
 elif [ $ptype == "sk02" ]
 then
 	echo "we are genotyping SNC product SK02..."
-	lociFile="/home/tianr/pipelines/getSNP/sk02.loci.txt"
+	#lociFile="/home/tianr/pipelines/getSNP/sk02.loci.txt"
+	lociFile="/home/tianr/pipelines/getSNP/sk02.40loci.txt" 
+	#Aug 23, 2019 updrade
+
 else
 	echo "you need specify the product type!"
 	exit 1
