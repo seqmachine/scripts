@@ -1,6 +1,8 @@
 #TianR <> Aug 23, 2019
 #Aug 19, 2019
 #Aug 12, 2019
+#Sep 6, 2019
+
 echo "@info: This script needs optitypENV, so prior to running, source/conda activate optitypeENV."
 
 slicedFA="/home/tianr/dataset/7.19autoimmune/fastqFiles/SLE/sle665/8.9-mileup/classI-ARS.fa"
@@ -20,6 +22,10 @@ slicedFA="temp/classI-ARS.fasta"
 #threads, cores
 td=6
 mem=4G
+#Sep 9, 2019
+#strip harder 0, 1, 2
+
+editingDistance=1
 
 #file root name
 name=$1
@@ -243,25 +249,33 @@ SortUniqueIndex(){
 #so called unique by excluding XS, 1520
 #mapq=10
 
-selectByMAPQ(){
+RecycleReads(){
 	dir=$1
-	mapq=$2
-	library=$3
-
+	library=$2
+	
 	mkdir -p $dir
-	samtools view $name".BAM.sorted.rmdup" | grep "HLA:HLA" | grep "AS:i" | awk -v Q=$mapq '{if($5 < Q) print $0}'  \
-|samtools view -b -T temp/$name"_assignedHLA.fa" > $dir/$name".MAPQ"$mapq".bam"
-	if [ $library == "paired" ]; then
-		samtools fastq -N -c 9 --threads $td -1 $dir/$name".MAPQ"$mapq"_1.fastq.gz" -2 $dir/$name".MAPQ"$mapq"_2.fastq.gz" $dir/$name".MAPQ"$mapq".bam"
-	elif [ $library == "single" ]; then
-		samtools fastq -N --threads $td $dir/$name".MAPQ"$mapq".bam" |gzip >$dir/$name".MAPQ"$mapq".fastq.gz"
-	else
-		echo "@info: filter read via MAPQ, needs to state library type: single or paired end!"
-		exit 5
-	fi
 
-	}
+	#strip perfect match:
+	samtools view $name".BAM.sorted.rmdup" | grep "HLA:HLA" | grep "AS:i:" | grep "NM:i:0" \
+|samtools view -b -T temp/$name"_assignedHLA.fa" > $dir/$name".0.bam"
+	samtools view $name".BAM.sorted.rmdup" | grep "HLA:HLA" | grep "AS:i:" | grep -w "NM:i:1" \
+|samtools view -b -T temp/$name"_assignedHLA.fa" > $dir/$name".1.bam"
+	samtools view $name".BAM.sorted.rmdup" | grep "HLA:HLA" | grep "AS:i:" |grep -v "NM:i:0" |grep -v -w "NM:i:1"\
+| samtools view -b -T temp/$name"_assignedHLA.fa" > $dir/$name".x.bam"
 
+	for k in "0" "1" "x"
+	do
+		if [ $library == "paired" ]; then
+			samtools fastq -N -c 9 --threads $td -1 $dir/$name"."$k"_1.fastq.gz" -2 $dir/$name"."$k"_2.fastq.gz" $dir/$name"."$k".bam"
+		elif [ $library == "single" ]; then
+			samtools fastq -N --threads $td $dir/$name"."$k".bam" |gzip >$dir/$name"."$k".fastq.gz"
+		else
+			echo "@info: filter read via partial.matched, needs to state library type: single or paired end!"
+			exit 5
+		fi
+	
+	done
+}
 
 
 
@@ -280,32 +294,33 @@ else
 	echo "@info: finished targetted mapping against first round assigned HLA types."
 fi
 
-for mapq in 10 5 2
-do
-	if [ -s $name".MAPQ"$mapq"*.fastq.gz" ];then
-		echo `ls "$name".MAPQ"$mapq"*".fastq.gz"`
-	else
-		date
-		echo "@info: read filtering via MAPQ........ "
-		selectByMAPQ $name"_outFQ" $mapq $library
-		date
-		echo "@info: read filtering via MAPQ, done. "
-	fi
-done
+if [ -s $name".partial.matched"*".fastq.gz" ];then
+	echo `ls $name".partial.matched"*".fastq.gz"`
+else
+	date
+	echo "@info: read filtering via partial.matched........ "
+	#FilterPartialMatchedReads $name"_outFQ" $library $editingDistance
+	RecycleReads $name"_outFQ" $library 
+	date
+	echo "@info: read filtering via partial.matched, done. "
+fi
 
 cd $name"_outFQ"
 
-for mapq in 10 5 2 #5 is even looser
-do
-	if [ $library == "single" ]; then
-		runOptiTypeSingleEND $name".MAPQ"$mapq `pwd`
-	elif [ $library == "paired" ]; then
-		runOptiType $name".MAPQ"$mapq `pwd`
-	else
-		echo "@info: MAPQ series not run."
-		exit 6
-	fi 
-done
+if [ $library == "single" ]; then
+	runOptiTypeSingleEND $name".0" `pwd`
+	runOptiTypeSingleEND $name".1" `pwd`
+	runOptiTypeSingleEND $name".x" `pwd`
+
+elif [ $library == "paired" ]; then
+	runOptiType $name".0" `pwd`
+	runOptiType $name".1" `pwd`
+	runOptiType $name".x" `pwd`
+
+else
+	echo "@info: partial.matched series not run."
+	exit 6
+fi 
 
 cd ..
 

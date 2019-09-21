@@ -1,5 +1,6 @@
 echo `date`
 #-a -M
+#Sep 20, 2019 -all, report all possible mapped
 
 root=$1
 prefix="hla."
@@ -16,9 +17,9 @@ fi
 
 if [ $library == "paired" ]; then
 #multiple runs!!!
-	bwa mem -t 20 $fullHLAref $root"_1.fastq.gz" $root"_2.fastq.gz" >$root".SAM"
+	bwa mem -a -t 20 $fullHLAref $root"_1.fastq.gz" $root"_2.fastq.gz" >$root".SAM"
 elif [ $library == "single" ]; then
-	bwa mem -t 20 $fullHLAref $root".fastq.gz" >$root".SAM"
+	bwa mem -a -t 20 $fullHLAref $root".fastq.gz" >$root".SAM"
 else
 	echo "mapping could not be done."
 	exit 2
@@ -40,6 +41,21 @@ else
 	echo "bam to fastq could not be done."
 	exit 3
 fi
+
+
+echo "count reads, very raw!"
+samtools view $prefix$root".bam" | cut -f3 | sort | uniq -c | sort -k1nr | awk '{print $2"\t"$1}' >$prefix$root".counts"
+
+echo "extract reads by assigned HLA raw types"
+mkdir -p interData
+
+for gene in A B C DRB1 DQB1 DPB1
+do
+
+	echo ">HLA-"$gene" aligned reads" >interData/$prefix$root"."$gene".fasta"
+	samtools view $prefix$root".bam" | grep "_$gene\*" | cut -f10 | grep -v "\*" >>interData/$prefix$root"."$gene".fasta"
+
+done
 
 date
 
