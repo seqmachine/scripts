@@ -40,7 +40,7 @@ class Similarity():
 
         numerator = sum(a*b for a,b in zip(x,y))
         denominator = self.square_rooted(x)*self.square_rooted(y)
-        return round(numerator/float(denominator),3)
+        return round(numerator/float(denominator),4)
 
 
     def cosine_similarity2(vector1, vector2):
