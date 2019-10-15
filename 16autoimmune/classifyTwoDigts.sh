@@ -31,7 +31,7 @@ pyDir="/home/tianr/dataset/2019.7.30-wholeblood-singleEND-RNA-seq-585G-117sample
 
 #fullHLAref="/home/tianr/dataset/2019.7.30-wholeblood-singleEND-RNA-seq-585G-117samples/test/python/refData/hla_cDNA"
 #fullHLAref="./python/refData/hla-cDNA"
-fullHLAref="/home/tianr/dataset/7.19autoimmune/hla_ref/hla-cDNA"
+#fullHLAref="/home/tianr/dataset/7.19autoimmune/hla_ref/hla-cDNA"
 
 #fullHLAref="./python/refData/hla-class1-ARS"
 
@@ -191,18 +191,55 @@ rm  $dir/$name".k"$i$type".h5"
 generateKmerReads(){
     echo "generate kmers for B ref and B regions reads."
     prefix=$1
-    cp kmer.sh $interdir
+    #cp kmer.sh $interdir
     cd $interdir
     #./kmer.sh $name".B" ".fasta"
     kmer $prefix ".fasta"
-    rm kmer.sh 
+    #rm kmer.sh 
     cd ..
 
 }
 
 generateKmerReads $geno1".rm"
 second=`typing $antigen $geno1".rm"`
-#./cosine.sh interData/ $geno1".rm" interRef/B-fa/ "B81"
 
 echo "#HLA typing is :" >>$output
-echo $geno1" "$second >>$output
+
+if [ $geno1 != $second ]; then
+    echo $geno1" "$second >>$output
+elif [ $geno1 == $second ]; then
+    second=`cat interData/$antigen*".tab" |sort -k2nr |head -n2 | tail -n1 |cut -d " " -f1`
+    echo $geno1" "$second >>$output
+else
+    echo "something wrong!"
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
