@@ -1,15 +1,22 @@
 #!/bin/env/python
 
 #Sep 21, 2019
-
+#Oct 16, 2019
+#########################################################
+#add class II ref: for DPB1 and DRB1, full lenngth should trim first 100bp exon1?
+#for DQB1, full length should trim 109 bp exon1? 
+#all should compare exon 2, 270bp
 
 #declare constants:
 #class I, exon 1 seq
 
 C1Exon1="ATGGCCGTCATGGCGCCCAGAACCCTCCTCCTGCTACTCTCGGGGGCCCTGGCCCTGACCCAGACCTGGGCGG"
 
+#class II
+#DPB1, DRB1
 
 
+#DQB1
 
 
 def readFa(infile):
@@ -53,6 +60,12 @@ def main():
         coreLen=546
     elif antigen.startswith("C"):
         coreLen=546
+    elif antigen.startswith("DRB1"):
+        coreLen=270
+    elif antigen.startswith("DPB1"):
+        coreLen=270
+    elif antigen.startswith("DQB1"):
+        coreLen=270
 
     #A*01:01: redundancy, take only one
     fourList=[]
@@ -66,7 +79,19 @@ def main():
             if rawSeq.startswith("ATG"):
             #if rawSeq[:73]==C1Exon1:
                 #rawSeq has exon 1
-                deExon1Seq=rawSeq[73:] 
+                if antigen.startswith("A"):
+                    deExon1Seq=rawSeq[73:] 
+                elif antigen.startswith("B"):
+                    deExon1Seq=rawSeq[73:]
+                elif antigen.startswith("C"):
+                    deExon1Seq=rawSeq[73:]
+                elif antigen.startswith("DRB1"):
+                    deExon1Seq=rawSeq[100:]
+                elif antigen.startswith("DPB1"):
+                    deExon1Seq=rawSeq[100:]
+                elif antigen.startswith("DQB1"):
+                    deExon1Seq=rawSeq[109:]
+
                 #print deExon1Seq
             else:
                 deExon1Seq=rawSeq
