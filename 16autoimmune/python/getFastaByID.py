@@ -19,6 +19,10 @@ C1Exon1="ATGGCCGTCATGGCGCCCAGAACCCTCCTCCTGCTACTCTCGGGGGCCCTGGCCCTGACCCAGACCTGGGC
 #DQB1
 
 
+#Nov 6, 2019
+#DPB1 199/198/19/bug
+
+
 def readFa(infile):
     """
     >HLA:HLA00001_A*01:01:01:01_1098_bp
@@ -66,6 +70,15 @@ def main():
         coreLen=270
     elif antigen.startswith("DQB1"):
         coreLen=270
+
+
+    #for DPB1/MICA1, especially for DPB1
+    #
+    #
+    if antigen.startswith("DPB1*") and len(antigen)==7:
+        # 2## confusing
+        antigen=antigen+":"  
+    
 
     #A*01:01: redundancy, take only one
     fourList=[]
